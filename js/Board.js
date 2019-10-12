@@ -88,12 +88,18 @@ module.exports = class Board {
     ctx.fillRect(0, 0, this.BOARD_SIZE, this.BOARD_SIZE);
   }
 
-  click(xPX, yPX) {
+  async click(xPX, yPX) {
     if (this.busy) return;
 
     const x = xPX / this.CELL_SIZE | 0;
     const y = yPX / this.CELL_SIZE | 0;
 
+    await this.main(y, x);
+
+    this.busy = false;
+  }
+
+  async main(y, x) {
     const cell = this.cells[y][x];
     if (cell.color && this.isEdgeCell(x, y)) {
       const direction = this.getDirection(x, y);
@@ -103,13 +109,20 @@ module.exports = class Board {
         this.busy = true;
         cell.direction = direction;
 
-        this.animateMotion(x, y, destination.x, destination.y, arrowByDirection[direction])
-          .then(() => {
-            this.refill(x, y, direction);
+        await this.animateMotion(x, y, destination.x, destination.y, arrowByDirection[direction]);
+        this.refill(x, y, direction);
 
-            this.removeSeries();
-            this.busy = false;
-          });
+        do {
+          this.removeSeries();
+          this.paint();
+        } while (await this.searchAndMoveMoveableCells());
+        this.paint();
+
+        if (this.won()) {
+          alert('You won!');
+        } else {
+          this.busy = false; // Disable further play
+        }
       }
     }
   }
@@ -155,7 +168,7 @@ module.exports = class Board {
         do {
           cells[y][x] = new Cell(y, x);
           colors.add(cells[y][x].color);
-        } while(counter === 4 && colors.size === 1);
+        } while (counter === 4 && colors.size === 1);
       }
     }
 
@@ -216,8 +229,8 @@ module.exports = class Board {
           this.swapCells(xFrom, yFrom, xTo, nextY);
           yFrom = nextY;
         }
-        
-        if(yFrom === yTo && xFrom === xTo) {
+
+        if (yFrom === yTo && xFrom === xTo) {
           clearInterval(interval);
           resolve();
         }
@@ -253,9 +266,9 @@ module.exports = class Board {
     ctx.fillText(arrow, location.x * px + px / 2, location.y * px + px / 1.5);
   }
 
-  removeSeries() {
-    for (let x = this.CELLS_IN_DOCK_WIDTH; x < this.CELLS_IN_DOCK_WIDTH + this.CELLS_IN_DOCK_LENGTH; x++)
-      for (let y = this.CELLS_IN_DOCK_WIDTH; y < this.CELLS_IN_DOCK_WIDTH + this.CELLS_IN_DOCK_LENGTH; y++)
+  async removeSeries() {
+    for (let x = this.playground.left; x <= this.playground.right; x++)
+      for (let y = this.playground.left; y <= this.playground.right; y++)
         if (this.cells[y][x].color) {
           const pathChain = [];
           const pathLength = this.followPath(y, x, this.cells[y][x].color, pathChain);
@@ -263,20 +276,9 @@ module.exports = class Board {
             pathChain.forEach(cell => {
               delete cell.color;
               delete cell.direction;
-              this.paint();
-              this.searchAndMoveMoveableCells();
             })
           }
         }
-
-    if (this.won()) {
-      // Disable further play
-      this.click = () => { };
-      // Let the game continue for animation - and then alert
-      setTimeout(() => {
-        alert('You won!');
-      }, 1000);
-    }
   }
 
   refill(x, y, direction) {
@@ -312,13 +314,7 @@ module.exports = class Board {
     return result;
   }
 
-  searchAndMoveMoveableCells() {
-    if(this.searchAndMoveMoveableCells.on) {
-      this.searchAndMoveMoveableCells.runAgainOnceDone = true;
-      return;
-    }
-
-    this.searchAndMoveMoveableCells.on = true;
+  async searchAndMoveMoveableCells() {
     const promises = [];
 
     this.cells.forEach(cells => cells.forEach(cell => {
@@ -330,15 +326,8 @@ module.exports = class Board {
       }
     }));
 
-    Promise.all(promises).then(() => {
-      this.paint();
-      this.searchAndMoveMoveableCells.on = false;
-
-      if (this.searchAndMoveMoveableCells.runAgainOnceDone || promises.length > 0) {
-        this.searchAndMoveMoveableCells.runAgainOnceDone = false;
-        this.searchAndMoveMoveableCells();
-      }
-    });
+    await Promise.all(promises);
+    return promises.length > 0;
   }
 
   /** @param {{ x: number, y: number }} cell */
