@@ -317,10 +317,12 @@ module.exports = class Board {
   async searchAndMoveMoveableCells() {
     const promises = [];
 
+    const takenCellsByThisSearch = new Set();
     this.cells.forEach(cells => cells.forEach(cell => {
       if (this.playground.contains(cell) && cell.direction) {
         const next = this.nextCell(cell, cell.direction);
-        if (!next.color) {
+        if (!next.color && !takenCellsByThisSearch.has(next)) {
+          takenCellsByThisSearch.add(next);
           promises.push(this.animateMotion(cell.x, cell.y, next.x, next.y, arrowByDirection[cell.direction]))
         }
       }
