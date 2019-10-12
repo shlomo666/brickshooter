@@ -27,7 +27,6 @@ canvas.width = canvas.height = BOARD_SIZE;
 
 board.paint();
 
-canvas.onmouseup = function(ev){
-  console.log(ev);
+canvas.onmouseup = function (ev) {
   board.click(ev.offsetX, ev.offsetY);
 } 
