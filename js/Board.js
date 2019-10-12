@@ -74,13 +74,13 @@ module.exports = class Board {
   addGradient() {
     const { ctx } = this;
 
-    const gradient = ctx.createLinearGradient(0, 20, 0, this.BOARD_SIZE - 20);
+    const gradient = ctx.createLinearGradient(0, 0, this.BOARD_SIZE, this.BOARD_SIZE);
 
-    gradient.addColorStop(0, 'blue');
+    gradient.addColorStop(0, 'white');
     gradient.addColorStop(.25, 'black');
-    gradient.addColorStop(.5, 'blue');
+    gradient.addColorStop(.5, 'white');
     gradient.addColorStop(.75, 'black');
-    gradient.addColorStop(1, 'blue');
+    gradient.addColorStop(1, 'white');
 
     this.gradient = gradient;
 
