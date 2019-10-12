@@ -119,7 +119,7 @@ module.exports = class Board {
         this.paint();
 
         if (this.won()) {
-          alert('You won!');
+          setImmediate(() => alert('You won!'));
         } else {
           this.busy = false; // Disable further play
         }
@@ -229,7 +229,6 @@ module.exports = class Board {
           this.swapCells(xFrom, yFrom, xTo, nextY);
           yFrom = nextY;
         }
-
         if (yFrom === yTo && xFrom === xTo) {
           clearInterval(interval);
           resolve();
