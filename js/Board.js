@@ -146,9 +146,16 @@ module.exports = class Board {
       }
     }
 
+    // setup initial middle cells - don't let them all be of the same color.
+    const colors = new Set();
+    let counter = 0;
     for (let x = this.CELLS_IN_BOARD / 2 - 1 | 0; x < this.CELLS_IN_BOARD / 2 + 1 | 0; x++) {
       for (let y = this.CELLS_IN_BOARD / 2 - 1 | 0; y < this.CELLS_IN_BOARD / 2 + 1 | 0; y++) {
-        cells[y][x] = new Cell(y, x);
+        counter++;
+        do {
+          cells[y][x] = new Cell(y, x);
+          colors.add(cells[y][x].color);
+        } while(counter === 4 && colors.size === 1);
       }
     }
 
@@ -263,8 +270,12 @@ module.exports = class Board {
         }
 
     if (this.won()) {
-      alert('You won!');
+      // Disable further play
       this.click = () => { };
+      // Let the game continue for animation - and then alert
+      setTimeout(() => {
+        alert('You won!');
+      }, 1000);
     }
   }
 
