@@ -119,7 +119,7 @@ module.exports = class Board {
         this.paint();
 
         if (this.won()) {
-          setImmediate(() => alert('You won!'));
+          setTimeout(() => alert('You won!'), 80);
         } else {
           this.busy = false; // Disable further play
         }
