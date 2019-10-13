@@ -2,41 +2,47 @@
 
 const Cell = require('./Cell');
 const Rectangle = require('./Rectangle');
-const GRADIENT = false;
+const {
+  GRADIENT,
+  arrowByDirection,
+  FRAME_IN_MILLISEC,
+  CELLS_IN_BOARD,
+  CELLS_IN_DOCK_LENGTH,
+  CELLS_IN_DOCK_WIDTH,
+  INITIAL_CENTER_SIZE,
+  DIRECTIONS: {
+    DOWN, LEFT, RIGHT, UP
+  },
+} = require('./config');
 
-const arrowByDirection = {
-  'up': '\u2191',
-  'down': '\u2193',
-  'left': '\u2190',
-  'right': '\u2192'
-};
 module.exports = class Board {
-  constructor(BOARD_SIZE, DOCK_LENGTH, DOCK_WIDTH, CELLS_IN_BOARD, CELL_SIZE) {
+  constructor(BOARD_SIZE, CELL_SIZE) {
     this.canvas = document.createElement('canvas');
-    this.canvas.height = this.canvas.width = BOARD_SIZE;
-    this.BOARD_SIZE = BOARD_SIZE;
-    this.DOCK_LENGTH = DOCK_LENGTH;
-    this.DOCK_WIDTH = DOCK_WIDTH;
-    this.CELLS_IN_BOARD = CELLS_IN_BOARD;
-    this.CELLS_IN_DOCK_LENGTH = CELLS_IN_BOARD / 2 | 0;
-    this.CELLS_IN_DOCK_WIDTH = CELLS_IN_BOARD / 4 | 0;
-    this.CELL_SIZE = CELL_SIZE;
-    this.playground = new Rectangle(this.CELLS_IN_DOCK_WIDTH, this.CELLS_IN_DOCK_WIDTH, this.CELLS_IN_DOCK_LENGTH, this.CELLS_IN_DOCK_LENGTH);
+    this.resize(BOARD_SIZE, CELL_SIZE);
 
     this.cells = this.generateCells();
 
     this.ctx = this.canvas.getContext('2d');
   }
 
-  resize(BOARD_SIZE, DOCK_LENGTH, DOCK_WIDTH, CELLS_IN_BOARD, CELL_SIZE) {
+  resize(BOARD_SIZE, CELL_SIZE) {
     this.canvas.height = this.canvas.width = BOARD_SIZE;
     this.BOARD_SIZE = BOARD_SIZE;
-    this.DOCK_LENGTH = DOCK_LENGTH;
-    this.DOCK_WIDTH = DOCK_WIDTH;
-    this.CELLS_IN_BOARD = CELLS_IN_BOARD;
     this.CELL_SIZE = CELL_SIZE;
-    this.playground = new Rectangle(this.CELLS_IN_DOCK_WIDTH, this.CELLS_IN_DOCK_WIDTH, this.CELLS_IN_DOCK_LENGTH, this.CELLS_IN_DOCK_LENGTH);
 
+    this.boardArea = new Rectangle(0, 0, CELLS_IN_BOARD, CELLS_IN_BOARD);
+    this.playground = new Rectangle(CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_LENGTH, CELLS_IN_DOCK_LENGTH);
+
+    const middle = (CELLS_IN_BOARD - INITIAL_CENTER_SIZE) / 2 | 0;
+    this.center = new Rectangle(middle, middle, INITIAL_CENTER_SIZE, INITIAL_CENTER_SIZE);
+    this.dockerUp = new Rectangle(CELLS_IN_DOCK_WIDTH, 0, CELLS_IN_DOCK_LENGTH, CELLS_IN_DOCK_WIDTH);
+    this.dockerDown = new Rectangle(CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_WIDTH + CELLS_IN_DOCK_LENGTH, CELLS_IN_DOCK_LENGTH, CELLS_IN_DOCK_WIDTH);
+    this.dockerLeft = new Rectangle(0, CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_LENGTH);
+    this.dockerRight = new Rectangle(CELLS_IN_DOCK_WIDTH + CELLS_IN_DOCK_LENGTH, CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_WIDTH, CELLS_IN_DOCK_LENGTH);
+  }
+
+  resizeAndPaint(BOARD_SIZE, CELL_SIZE) {
+    this.resize(BOARD_SIZE, CELL_SIZE);
     this.paint();
   }
 
@@ -50,7 +56,7 @@ module.exports = class Board {
 
     ctx.clearRect(0, 0, this.BOARD_SIZE, this.BOARD_SIZE);
 
-    if(GRADIENT) {
+    if (GRADIENT) {
       this.addGradient();
     } else {
       this.canvas.style.background = '#282c35';
@@ -59,22 +65,21 @@ module.exports = class Board {
     ctx.lineWidth = "1";
     ctx.strokeStyle = "black";
 
-    for (let y = 0; y < this.CELLS_IN_BOARD; y++)
-      for (let x = 0; x < this.CELLS_IN_BOARD; x++) {
-        const { color, direction } = this.cells[y][x];
-        if (color === undefined) continue;
+    for (const { x, y } of this.boardArea) {
+      const { color, direction } = this.cells[y][x];
+      if (color === undefined) continue;
 
-        ctx.fillStyle = color;
-        ctx.fillRect(x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
+      ctx.fillStyle = color;
+      ctx.fillRect(x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
 
-        if (direction) {
-          this.drawArrow(color, arrowByDirection[direction], { x, y });
-        }
-
-        ctx.beginPath();
-        ctx.rect(x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
-        ctx.stroke();
+      if (direction) {
+        this.drawArrow(color, arrowByDirection[direction], { x, y });
       }
+
+      ctx.beginPath();
+      ctx.rect(x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
+      ctx.stroke();
+    }
   }
 
   addGradient() {
@@ -125,7 +130,7 @@ module.exports = class Board {
         this.paint();
 
         if (this.won()) {
-          setTimeout(() => alert('You won!'), 80);
+          setTimeout(() => alert('You won!'), FRAME_IN_MILLISEC * 2);
         } else {
           this.busy = false; // Disable further play
         }
@@ -138,86 +143,58 @@ module.exports = class Board {
   }
 
   generateCells() {
-    const cells = Array(this.CELLS_IN_BOARD).fill().map((_, y) =>
-      Array(this.CELLS_IN_BOARD).fill().map((_, x) => {
+    const cells = Array(CELLS_IN_BOARD).fill().map((_, y) =>
+      Array(CELLS_IN_BOARD).fill().map((_, x) => {
         return new Cell(y, x, 'no');
       })
     );
 
-    for (let x = this.CELLS_IN_DOCK_WIDTH; x < this.CELLS_IN_DOCK_LENGTH + this.CELLS_IN_DOCK_WIDTH; x++) {
-      for (let y = 0; y < this.CELLS_IN_DOCK_WIDTH; y++) {
-        cells[y][x] = new Cell(y, x);
-      }
-    }
-    for (let x = this.CELLS_IN_DOCK_WIDTH; x < this.CELLS_IN_DOCK_LENGTH + this.CELLS_IN_DOCK_WIDTH; x++) {
-      for (let y = this.CELLS_IN_BOARD - 1; y >= this.CELLS_IN_BOARD - this.CELLS_IN_DOCK_WIDTH; y--) {
-        cells[y][x] = new Cell(y, x);
-      }
-    }
-    for (let x = 0; x < this.CELLS_IN_DOCK_WIDTH; x++) {
-      for (let y = this.CELLS_IN_DOCK_WIDTH; y < this.CELLS_IN_DOCK_LENGTH + this.CELLS_IN_DOCK_WIDTH; y++) {
-        cells[y][x] = new Cell(y, x);
-      }
-    }
-    for (let x = this.CELLS_IN_DOCK_LENGTH + this.CELLS_IN_DOCK_WIDTH; x < this.CELLS_IN_BOARD; x++) {
-      for (let y = this.CELLS_IN_DOCK_WIDTH; y < this.CELLS_IN_DOCK_LENGTH + this.CELLS_IN_DOCK_WIDTH; y++) {
-        cells[y][x] = new Cell(y, x);
-      }
-    }
+    [this.dockerUp, this.dockerRight, this.dockerLeft, this.dockerDown]
+      .forEach(docker => {
+        for (const { y, x } of docker) {
+          cells[y][x] = new Cell(y, x);
+        }
+      });
 
     // setup initial middle cells - don't let them all be of the same color.
     const colors = new Set();
     let counter = 0;
-    for (let x = this.CELLS_IN_BOARD / 2 - 1 | 0; x < this.CELLS_IN_BOARD / 2 + 1 | 0; x++) {
-      for (let y = this.CELLS_IN_BOARD / 2 - 1 | 0; y < this.CELLS_IN_BOARD / 2 + 1 | 0; y++) {
-        counter++;
-        do {
-          cells[y][x] = new Cell(y, x);
-          colors.add(cells[y][x].color);
-        } while (counter === 4 && colors.size === 1);
-      }
+    for (const { y, x } of this.center) {
+      counter++;
+      do {
+        cells[y][x] = new Cell(y, x);
+        colors.add(cells[y][x].color);
+      } while (counter === 4 && colors.size === 1);
     }
 
     return cells;
-
   }
 
   isEdgeCell(x, y) {
-    const peek = this.CELLS_IN_DOCK_WIDTH - 1;
     return (
-      x === peek ||
-      this.CELLS_IN_BOARD - 1 - x === peek ||
-      y === peek ||
-      this.CELLS_IN_BOARD - 1 - y === peek
-    )
+      y === this.dockerUp.bottom ||
+      y === this.dockerDown.top ||
+      x === this.dockerLeft.right ||
+      x === this.dockerRight.left
+    );
   }
 
   getDirection(x, y) {
-    const peek = this.CELLS_IN_DOCK_WIDTH - 1;
-    if (x === peek) return 'right';
-    if (this.CELLS_IN_BOARD - 1 - x === peek) return 'left';
-    if (y === peek) return 'down';
-    if (this.CELLS_IN_BOARD - 1 - y === peek) return 'up';
+    const peek = CELLS_IN_DOCK_WIDTH - 1;
+    if (x === this.dockerLeft.right) return RIGHT;
+    if (x === this.dockerRight.left) return LEFT;
+    if (y === this.dockerUp.bottom) return DOWN;
+    if (y === this.dockerDown.top) return UP;
     throw new Error('No Direction');
   }
 
   getDestination(x, y, direction) {
-    if (direction === 'down') {
-      while (!this.cells[++y][x].color);
-      return { destination: { x, y: y - 1 }, cause: { x, y } };
-    }
-    if (direction === 'up') {
-      while (!this.cells[--y][x].color);
-      return { destination: { x, y: y + 1 }, cause: { x, y } };
-    }
-    if (direction === 'right') {
-      while (!this.cells[y][++x].color);
-      return { destination: { x: x - 1, y }, cause: { x, y } };
-    }
-    if (direction === 'left') {
-      while (!this.cells[y][--x].color);
-      return { destination: { x: x + 1, y }, cause: { x, y } };
-    }
+    let destination, cause = this.cells[y][x];
+    do
+      [destination, cause] = [cause, this.nextCell(cause, direction)];
+    while (!cause.color);
+
+    return { destination, cause };
   }
 
   animateMotion(xFrom, yFrom, xTo, yTo, arrow) {
@@ -239,7 +216,7 @@ module.exports = class Board {
           clearInterval(interval);
           resolve();
         }
-      }, 40);
+      }, FRAME_IN_MILLISEC);
     });
   }
 
@@ -248,7 +225,7 @@ module.exports = class Board {
     const { ctx, CELL_SIZE: px } = this;
     // clear old cell
     ctx.clearRect(from.x * px, from.y * px, px, px);
-    if(GRADIENT) {
+    if (GRADIENT) {
       ctx.fillStyle = this.gradient;
       ctx.fillRect(from.x * px, from.y * px, px, px);
     }
@@ -274,25 +251,24 @@ module.exports = class Board {
   }
 
   async removeSeries() {
-    for (let x = this.playground.left; x <= this.playground.right; x++)
-      for (let y = this.playground.left; y <= this.playground.right; y++)
-        if (this.cells[y][x].color) {
-          const pathChain = [];
-          const pathLength = this.followPath(y, x, this.cells[y][x].color, pathChain);
-          if (pathLength >= 4) {
-            pathChain.forEach(cell => {
-              delete cell.color;
-              delete cell.direction;
-            })
-          }
+    for (const { x, y } of this.playground)
+      if (this.cells[y][x].color) {
+        const pathChain = [];
+        const pathLength = this.followPath(y, x, this.cells[y][x].color, pathChain);
+        if (pathLength >= 4) {
+          pathChain.forEach(cell => {
+            delete cell.color;
+            delete cell.direction;
+          })
         }
+      }
   }
 
   refill(x, y, direction) {
-    if (direction === 'down') { while (--y > -1) this.swapCells(x, y, x, y + 1); this.cells[y + 1][x] = new Cell(y + 1, x); }
-    if (direction === 'up') { while (++y < this.CELLS_IN_BOARD) this.swapCells(x, y, x, y - 1); this.cells[y - 1][x] = new Cell(y - 1, x); }
-    if (direction === 'right') { while (--x > -1) this.swapCells(x, y, x + 1, y); this.cells[y][x + 1] = new Cell(y, x + 1); }
-    if (direction === 'left') { while (++x < this.CELLS_IN_BOARD) this.swapCells(x, y, x - 1, y); this.cells[y][x - 1] = new Cell(y, x - 1); }
+    if (direction === DOWN) { while (--y > -1) this.swapCells(x, y, x, y + 1); this.cells[y + 1][x] = new Cell(y + 1, x); }
+    if (direction === UP) { while (++y < CELLS_IN_BOARD) this.swapCells(x, y, x, y - 1); this.cells[y - 1][x] = new Cell(y - 1, x); }
+    if (direction === RIGHT) { while (--x > -1) this.swapCells(x, y, x + 1, y); this.cells[y][x + 1] = new Cell(y, x + 1); }
+    if (direction === LEFT) { while (++x < CELLS_IN_BOARD) this.swapCells(x, y, x - 1, y); this.cells[y][x - 1] = new Cell(y, x - 1); }
 
     this.paint();
   }
@@ -339,22 +315,20 @@ module.exports = class Board {
     return promises.length > 0;
   }
 
-  /** @param {{ x: number, y: number }} cell */
-  /** @param {'up' | 'down' | 'left' | 'right'} direction */
   nextCell(cell, direction) {
     const { x, y } = cell;
     switch (direction) {
-      case 'down': return this.cells[y + 1][x];
-      case 'up': return this.cells[y - 1][x];
-      case 'right': return this.cells[y][x + 1];
-      case 'left': return this.cells[y][x - 1];
+      case DOWN: return this.cells[y + 1][x];
+      case UP: return this.cells[y - 1][x];
+      case RIGHT: return this.cells[y][x + 1];
+      case LEFT: return this.cells[y][x - 1];
     }
   }
 
   won() {
-    for (let x = this.CELLS_IN_DOCK_WIDTH; x < this.CELLS_IN_DOCK_WIDTH + this.CELLS_IN_DOCK_LENGTH; x++)
-      for (let y = this.CELLS_IN_DOCK_WIDTH; y < this.CELLS_IN_DOCK_WIDTH + this.CELLS_IN_DOCK_LENGTH; y++)
-        if (this.cells[y][x].color) return false;
+    for (const { x, y } of this.playground) {
+      if (this.cells[y][x].color) return false;
+    }
     return true;
   }
 

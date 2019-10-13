@@ -1,25 +1,22 @@
 const boardElement = document.getElementById('board');
 const Board = require('./Board');
+const { CELLS_IN_BOARD } = require('./config');
 let BOARD_SIZE;
-let DOCK_LENGTH;
-let DOCK_WIDTH;
 let CELL_SIZE;
-let CELLS_IN_BOARD;
 
 function setSizes() {
   BOARD_SIZE = Math.min(boardElement.offsetHeight, boardElement.offsetWidth);
-  DOCK_LENGTH = BOARD_SIZE / 2 | 0;
-  DOCK_WIDTH = DOCK_LENGTH / 2 | 0;
-  CELLS_IN_BOARD = 24;
-  CELL_SIZE = DOCK_WIDTH / (CELLS_IN_BOARD / 4) | 0;
+  const dockLength = BOARD_SIZE / 2 | 0;
+  const dockWidth = dockLength / 2 | 0;
+  CELL_SIZE = dockWidth / (CELLS_IN_BOARD / 4) | 0;
 }
 window.onresize = () => {
   setSizes();
-  board.resize(BOARD_SIZE, DOCK_LENGTH, DOCK_WIDTH, CELLS_IN_BOARD, CELL_SIZE);
+  board.resizeAndPaint(BOARD_SIZE, CELL_SIZE);
 };
 setSizes();
 
-const board = new Board(BOARD_SIZE, DOCK_LENGTH, DOCK_WIDTH, CELLS_IN_BOARD, CELL_SIZE);
+const board = new Board(BOARD_SIZE, CELL_SIZE);
 
 const canvas = board.getElement();
 boardElement.appendChild(canvas);
