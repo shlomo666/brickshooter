@@ -13,6 +13,9 @@ const {
   DIRECTIONS: {
     DOWN, LEFT, RIGHT, UP
   },
+  COLORS: {
+    length: COLORS_LENGTH
+  }
 } = require('./config');
 
 module.exports = class Board {
@@ -156,15 +159,14 @@ module.exports = class Board {
         }
       });
 
-    // setup initial middle cells - don't let them all be of the same color.
+    // setup initial middle cells - make all cell colors unique.
+    if(INITIAL_CENTER_SIZE ** 2 > COLORS_LENGTH) throw new Error('all cell colors unique but not enough colors available');
     const colors = new Set();
-    let counter = 0;
     for (const { y, x } of this.center) {
-      counter++;
       do {
         cells[y][x] = new Cell(y, x);
-        colors.add(cells[y][x].color);
-      } while (counter === 4 && colors.size === 1);
+      } while (colors.has(cells[y][x].color));
+      colors.add(cells[y][x].color);
     }
 
     return cells;
