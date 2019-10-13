@@ -2,6 +2,7 @@
 
 const Cell = require('./Cell');
 const Rectangle = require('./Rectangle');
+const GRADIENT = false;
 
 const arrowByDirection = {
   'up': '\u2191',
@@ -48,7 +49,12 @@ module.exports = class Board {
     const { ctx } = this;
 
     ctx.clearRect(0, 0, this.BOARD_SIZE, this.BOARD_SIZE);
-    this.addGradient();
+
+    if(GRADIENT) {
+      this.addGradient();
+    } else {
+      this.canvas.style.background = '#282c35';
+    }
 
     ctx.lineWidth = "1";
     ctx.strokeStyle = "black";
@@ -84,7 +90,7 @@ module.exports = class Board {
 
     this.gradient = gradient;
 
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = this.gradient;
     ctx.fillRect(0, 0, this.BOARD_SIZE, this.BOARD_SIZE);
   }
 
@@ -242,8 +248,10 @@ module.exports = class Board {
     const { ctx, CELL_SIZE: px } = this;
     // clear old cell
     ctx.clearRect(from.x * px, from.y * px, px, px);
-    ctx.fillStyle = this.gradient;
-    ctx.fillRect(from.x * px, from.y * px, px, px);
+    if(GRADIENT) {
+      ctx.fillStyle = this.gradient;
+      ctx.fillRect(from.x * px, from.y * px, px, px);
+    }
 
     ctx.fillStyle = color;
     ctx.fillRect(x * px, y * px, px, px);

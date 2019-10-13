@@ -1,10 +1,9 @@
 const COLORS = [
-  '#ff0000', // red 
-  '#0000ff', // blue 
-  // '#008000', // green 
-  '#ffff00', // yellow 
-  '#ff0000', // biege 
-  '#a52a2a' // brown;
+  '#C8282B', // Brick Red
+  '#F1F037', // Starship 
+  '#6C66E5', // Royal Blue
+  '#C3C3BD', // Gray Nickel
+  '#281c35' // Cornflower Blue
 ];
 
 module.exports = class Cell {
