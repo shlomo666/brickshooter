@@ -8,4 +8,11 @@ module.exports = class Cell {
     /** @type {'up' | 'down' | 'left' | 'right'} */
     this.direction = undefined;
   }
+
+  clone() {
+    const cell = new Cell(this.y, this.x, 'no');
+    cell.color = this.color;
+    cell.direction = this.direction;
+    return cell;
+  }
 }

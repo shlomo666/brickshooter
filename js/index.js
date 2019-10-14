@@ -16,14 +16,49 @@ window.onresize = () => {
 };
 setSizes();
 
-const board = new Board(BOARD_SIZE, CELL_SIZE);
+/** @type {Board} */
+let board;
+let canvas;
 
-const canvas = board.getElement();
-boardElement.appendChild(canvas);
-canvas.width = canvas.height = BOARD_SIZE;
+window.app = {
+  newGame: () => {
+    board = new Board(BOARD_SIZE, CELL_SIZE);
+    if(boardElement.childElementCount) {
+      boardElement.removeChild(canvas);
+    }
+    canvas = board.getElement();
+    boardElement.appendChild(canvas);
+    canvas.width = canvas.height = BOARD_SIZE;
 
-board.paint();
+    board.paint();
+    updateMeta();
+    
+    canvas.onmouseup = async ev => {
+      await board.click(ev.offsetX, ev.offsetY);
+      updateMeta();
+    };
+    document.onkeydown = (ev) => {
+      if(ev.metaKey && ev.key.toLowerCase() === 'z') {
+        if(ev.shiftKey) {
+          window.app.forwardStep();
+        } else {
+          window.app.backStep();
+        }
+      }
+    }
+  },
+  backStep: () => {
+    board.backStep();
+    updateMeta();
+  },
+  forwardStep: () => { 
+    board.forwardStep();
+    updateMeta();
+  }
+};
 
-canvas.onmouseup = function (ev) {
-  board.click(ev.offsetX, ev.offsetY);
-} 
+window.app.newGame();
+
+function updateMeta() {
+  document.getElementById('step number').innerText = board.stepCounter + ' Steps';
+}

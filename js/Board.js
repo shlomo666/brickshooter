@@ -24,6 +24,9 @@ module.exports = class Board {
     this.resize(BOARD_SIZE, CELL_SIZE);
 
     this.cells = this.generateCells();
+    this.states = [];
+    this.stepCounter = -1;
+    this.saveState();
 
     this.ctx = this.canvas.getContext('2d');
   }
@@ -121,16 +124,18 @@ module.exports = class Board {
       const { destination, cause } = this.getDestination(x, y, direction);
       if (this.playground.contains(cause) && !this.same(cell, destination)) {
         this.busy = true;
+        
         cell.direction = direction;
-
         await this.animateMotion(x, y, destination.x, destination.y, arrowByDirection[direction]);
         this.refill(x, y, direction);
-
+        
         do {
           this.removeSeries();
           this.paint();
         } while (await this.searchAndMoveMoveableCells());
         this.paint();
+        
+        this.saveState();
 
         if (this.won()) {
           setTimeout(() => alert('You won!'), FRAME_IN_MILLISEC * 2);
@@ -351,5 +356,29 @@ module.exports = class Board {
     return (r * 0.299 + g * 0.587 + b * 0.114) > 186
       ? '#000000'
       : '#FFFFFF';
+  }
+
+  backStep() {
+    if(this.stepCounter > 0) {
+      this.cells = Board.cloneCells(this.states[--this.stepCounter]);
+      this.paint();
+    }
+  }
+
+  forwardStep() {
+    if(this.stepCounter < this.states.length - 1) {
+      this.cells = Board.cloneCells(this.states[++this.stepCounter]);
+      this.paint();
+    }
+  }
+
+  saveState() {
+    this.stepCounter++;
+    this.states.splice(this.stepCounter);
+    this.states[this.stepCounter] = Board.cloneCells(this.cells);
+  }
+
+  static cloneCells(cells) {
+    return cells.map(cells => cells.map(cell => cell.clone()));
   }
 }
