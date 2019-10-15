@@ -65,7 +65,7 @@ module.exports = class Board {
     if (GRADIENT) {
       this.addGradient();
     } else {
-      this.canvas.style.background = '#282c35';
+      this.canvas.style.background = 'linear-gradient(to bottom left, #33ccff 0%, #660066 87%)';
     }
 
     ctx.lineWidth = "1";
@@ -108,6 +108,8 @@ module.exports = class Board {
   async click(xPX, yPX) {
     if (this.busy) return;
 
+    this.busy = true;
+
     const x = xPX / this.CELL_SIZE | 0;
     const y = yPX / this.CELL_SIZE | 0;
 
@@ -123,7 +125,6 @@ module.exports = class Board {
 
       const { destination, cause } = this.getDestination(x, y, direction);
       if (this.playground.contains(cause) && !this.same(cell, destination)) {
-        this.busy = true;
         
         cell.direction = direction;
         await this.animateMotion(x, y, destination.x, destination.y, arrowByDirection[direction]);
@@ -139,8 +140,6 @@ module.exports = class Board {
 
         if (this.won()) {
           setTimeout(() => alert('You won!'), FRAME_IN_MILLISEC * 2);
-        } else {
-          this.busy = false; // Disable further play
         }
       }
     }

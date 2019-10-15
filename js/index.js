@@ -38,11 +38,13 @@ window.app = {
       updateMeta();
     };
     document.onkeydown = (ev) => {
-      if(ev.metaKey && ev.key.toLowerCase() === 'z') {
-        if(ev.shiftKey) {
-          window.app.forwardStep();
-        } else {
-          window.app.backStep();
+      if(ev.key.toLowerCase() === 'z') {
+        if(ev.metaKey || ev.ctrlKey) {
+          if(ev.shiftKey) {
+            window.app.forwardStep();
+          } else {
+            window.app.backStep();
+          }
         }
       }
     }
