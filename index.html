@@ -1,19 +1,22 @@
 <html>
-  <head>
-      <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-  </head>
-  <body>
-    <div style="display: flex;">
-        <div id="board" style="display: flex; align-items: center; justify-content: center; width: 100vmin; height:100vmin"></div>
-        <div id="buttons">
-          <div id="step number">0 Steps</div>
-          <button onclick="window.app.backStep()">Back</button>
-          <button onclick="window.app.forwardStep()">forward</button>
-          <button onclick="window.app.newGame()">New Game</button>
-        </div>
-    
-    </div>
 
-    <script src="bundle.js"></script>
-  </body>
+<head>
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+  <div style="display: flex;">
+    <div id="board" style="display: flex; align-items: center; justify-content: center; width: 100vmin; height:100vmin">
+    </div>
+    <div id="buttons" style="margin: 10px 10px 10px 10px">
+      <div id="step number">0 Steps</div>
+      <button onclick="window.app.backStep()">Back</button>
+      <button onclick="window.app.forwardStep()">forward</button>
+      <button onclick="window.app.newGame()">New Game</button>
+    </div>
+  </div>
+
+  <script src="bundle.js"></script>
+</body>
+
 </html>
