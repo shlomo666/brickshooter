@@ -68,7 +68,7 @@ module.exports = class Board {
       this.canvas.style.background = 'linear-gradient(to bottom left, #33ccff 0%, #660066 87%)';
     }
 
-    ctx.lineWidth = "1";
+    ctx.lineWidth = "0.5";
     ctx.strokeStyle = "black";
 
     for (const { x, y } of this.boardArea) {
@@ -205,8 +205,9 @@ module.exports = class Board {
 
   animateMotion(xFrom, yFrom, xTo, yTo, arrow) {
     const { color } = this.cells[yFrom][xFrom];
+
     return new Promise((resolve, reject) => {
-      const interval = setInterval(() => {
+      const animate = () => {
         if (xFrom !== xTo) {
           const nextX = xFrom + Math.sign(xTo - xFrom);
           this.drawCell({ x: xFrom, y: yFrom }, { x: nextX, y: yTo }, color, arrow, nextX === xTo);
@@ -219,10 +220,13 @@ module.exports = class Board {
           yFrom = nextY;
         }
         if (yFrom === yTo && xFrom === xTo) {
-          clearInterval(interval);
           resolve();
+        } else {
+          setTimeout(() => requestAnimationFrame(animate), FRAME_IN_MILLISEC);
         }
-      }, FRAME_IN_MILLISEC);
+      };
+      
+      setTimeout(() => requestAnimationFrame(animate), FRAME_IN_MILLISEC);
     });
   }
 
